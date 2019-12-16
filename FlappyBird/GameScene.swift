@@ -8,15 +8,39 @@
 
 import SpriteKit
 
-class GameScene: SKScene {
+                        //↓GameSceneクラスにSKPhysicsContactDelegateプロトコルを実装
+class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var scrollNode:SKNode!
     var wallNode:SKNode!
+    var bird:SKSpriteNode!
+    
+    
+    // 衝突判定カテゴリー,衝突判定に使うカテゴリーの値,カテゴリーを使ってどのスプライト同士が衝突したかを判断
+    //壁をくぐったことを判定するために上側の壁と下側の壁の間に見えない物体を配置して、
+    //これに衝突したときにくぐったと判断してスコアをカウントアップ
+    let birdCategory: UInt32 = 1 << 0       // 0...00001 鳥
+    let groundCategory: UInt32 = 1 << 1     // 0...00010 地面
+    let wallCategory: UInt32 = 1 << 2       // 0...00100 壁
+    let scoreCategory: UInt32 = 1 << 3      // 0...01000 スコア用の物体
+    
+    // スコア用
+    var score = 0
+    //画面上部にスコアを表示できるように、SKLabelNodeクラスを２つ定義
+    var scoreLabelNode:SKLabelNode!
+    var bestScoreLabelNode:SKLabelNode!
+    //UserDefaultsクラスのUserDefaults.standardプロパティでUserDefaultsを取得
+    let userDefaults:UserDefaults = UserDefaults.standard
     
     // SKView上にシーンが表示された時に呼ばれるメソッド
     //ゲーム画面（＝SKSceneクラスを継承したクラス）が表示されるときに呼ばれるメソッドがdidMove(to:)メソッド
     //このメソッドで画面を構築する処理を書いたり、ゲームの初期設定を行う
     override func didMove(to view: SKView) {
+        //重力の設定はSKPhysicsWorldクラスのgravityプロパティで設定
+        physicsWorld.gravity = CGVector(dx: 0, dy: -4)
+        //SKPhysicsWorldクラスのdelegateプロパティに設定
+        physicsWorld.contactDelegate = self
+        
         //背景色を設定
         //backgroundColorはUIColorクラス
         backgroundColor = UIColor(red: 0.15, green: 0.75, blue: 0.90, alpha: 1)
@@ -33,8 +57,38 @@ class GameScene: SKScene {
         // 各種スプライトを生成する処理をメソッドに分割
         setupGround()
         setupCloud()
+        setupWall()
+        setupBird()
+        
+        setupScoreLabel()
     }
     
+    //===========================================================================
+    //スコア文字の表示部分の初期化
+    func setupScoreLabel(){
+        score = 0
+        scoreLabelNode = SKLabelNode()
+        //fontColorプロパティで文字の色を指定
+        scoreLabelNode.fontColor = UIColor.black
+        scoreLabelNode.position = CGPoint(x: 10, y: self.frame.size.height - 60)
+        scoreLabelNode.zPosition = 100 // 一番手前に表示する
+        //horizontalAlignmentModeプロパティで左詰めかセンタリングか右詰めかを指定
+        scoreLabelNode.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+        scoreLabelNode.text = "Score:\(score)"
+        self.addChild(scoreLabelNode)
+        
+        bestScoreLabelNode = SKLabelNode()
+        bestScoreLabelNode.fontColor = UIColor.black
+        bestScoreLabelNode.position = CGPoint(x: 10, y: self.frame.size.height - 90)
+        bestScoreLabelNode.zPosition = 100 // 一番手前に表示する
+        bestScoreLabelNode.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+        
+        let bestScore = userDefaults.integer(forKey: "BEST")
+        bestScoreLabelNode.text = "Best Score:\(bestScore)"
+        self.addChild(bestScoreLabelNode)
+    }
+    
+    //===========================================================================
     func setupGround() {
         //地面の画像を読み込む
         //SKTextureクラス　表示する画像をSKTextureで扱う、画像のファイル名を指定して作成
@@ -58,30 +112,41 @@ class GameScene: SKScene {
         
         // groundのスプライトを配置する
         for i in 0..<needNumber {
+            // テクスチャを指定してスプライトを作成
             let sprite = SKSpriteNode(texture: groundTexture)
+            //let groundSprite = SKSpriteNode(texture: groundTexture)
+            //スプライトの表示する位置を指定
+            //positionで指定するのはNodeの中心位置
+            sprite.position = CGPoint (
+                x: groundTexture.size().width / 2  + groundTexture.size().width * CGFloat(i),
+                y: groundTexture.size().height / 2
+            )
         
-        // テクスチャを指定してスプライトを作成
-        let groundSprite = SKSpriteNode(texture: groundTexture)
-        //スプライトの表示する位置を指定
-        //positionで指定するのはNodeの中心位置
-        groundSprite.position = CGPoint (
-            x: groundTexture.size().width / 2 + groundTexture.size().width * CGFloat(i),
-            y: groundTexture.size().height / 2
-        )
+            //スプライトにアクションを設定する
+            sprite.run(repeatScrollGround)
+            
+            // スプライトに物理演算を設定する
+              sprite.physicsBody = SKPhysicsBody(rectangleOf: groundTexture.size())
+            
+            //衝突のカテゴリー設定
+            sprite.physicsBody?.categoryBitMask = groundCategory
+            
+            // 衝突の時に動かないように設定する
+            //地面なので四角形で物理体を設定
+            //SKPhysicsBodyクラスのisDynamicプロパティにfalseを設定することで重力の影響を受けず、衝突時に動かない
+            sprite.physicsBody?.isDynamic = false
         
-        //スプライトにアクションを設定する
-        sprite.run(repeatScrollGround)
-        
-        //スプライトを追加する
-        scrollNode.addChild(sprite)
-        
-        //シーンにスプライトを追加する
-        //addChild(_:)メソッドでgroundSpriteを画面に表示
-        //addChild(groundSprite)
+            //スプライトを追加する
+            scrollNode.addChild(sprite)
+            //シーンにスプライトを追加する
+            //addChild(_:)メソッドでgroundSpriteを画面に表示
+            //addChild(groundSprite)
         }
         
     }
     
+    
+    //===========================================================================
     func setupCloud(){
         //雲の画像を読み込み
         let cloudTexture = SKTexture(imageNamed: "cloud")
@@ -120,6 +185,8 @@ class GameScene: SKScene {
         }
     }
     
+    
+    //===========================================================================
     func setupWall() {
         //壁の画像を読み込む
         //当たり判定をする場合、テクスチャは.linerを設定
@@ -177,13 +244,40 @@ class GameScene: SKScene {
             let under = SKSpriteNode(texture: wallTexture)
             under.position = CGPoint(x: 0, y: under_wall_y)
             
+            // スプライトに物理演算を設定する
+            under.physicsBody = SKPhysicsBody(rectangleOf: wallTexture.size())
+            //壁にカテゴリー設定し、スコア用の物体を追加
+            //categoryBitMaskプロパティで自身のカテゴリー(wallCategory)を設定し、
+            //contactTestBitMaskプロパティで衝突することを判定する相手のカテゴリー(birdCategory)を設定
+            under.physicsBody?.categoryBitMask = self.wallCategory
+            
+            // 衝突の時に動かないように設定する
+            under.physicsBody?.isDynamic = false
+            
             wall.addChild(under)
             
             // 上側の壁を作成
             let upper = SKSpriteNode(texture: wallTexture)
             upper.position = CGPoint(x: 0, y: under_wall_y + wallTexture.size().height + slit_length)
             
+            // スプライトに物理演算を設定する
+            upper.physicsBody = SKPhysicsBody(rectangleOf: wallTexture.size())
+            upper.physicsBody?.categoryBitMask = self.wallCategory
+            
+            // 衝突の時に動かないように設定する
+            upper.physicsBody?.isDynamic = false
+            
             wall.addChild(upper)
+            
+            // スコアアップ用のノード
+            let scoreNode = SKNode()
+            scoreNode.position = CGPoint(x: upper.size.width + birdSize.width / 2, y: self.frame.height / 2)
+            scoreNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: upper.size.width, height: self.frame.size.height))
+            scoreNode.physicsBody?.isDynamic = false
+            scoreNode.physicsBody?.categoryBitMask = self.scoreCategory
+            scoreNode.physicsBody?.contactTestBitMask = self.birdCategory
+            
+            wall.addChild(scoreNode)
             
             wall.run(wallAnimation)
             
@@ -201,5 +295,127 @@ class GameScene: SKScene {
         wallNode.run(repeatForeverAnimation)
 
     }
+    
+    //===========================================================================
+    func setupBird() {
+        //鳥の画像を2種類読み込む
+        let birdTextureA = SKTexture(imageNamed: "bird_a")
+        birdTextureA.filteringMode = .linear
+        let birdTextureB = SKTexture(imageNamed: "bird_b")
+        birdTextureB.filteringMode = .linear
+        
+        //2種類のTextureを交互に表示するアニメーションを作成
+        let texuresAnimation = SKAction.animate(with: [birdTextureA, birdTextureB], timePerFrame: 0.2)
+        let flap = SKAction.repeatForever(texuresAnimation)
+    
+        //スプライトを作成
+        bird = SKSpriteNode(texture: birdTextureA)
+        bird.position = CGPoint(x:self.frame.size.width * 0.2, y:self.frame.size.height * 0.7)
+        
+        //物理演算を設定
+        //鳥のスプライトに半径を指定して円形の物理体を設定
+        bird.physicsBody = SKPhysicsBody(circleOfRadius: bird.size.height / 2)
+        
+        // 衝突した時に回転させない
+        bird.physicsBody?.allowsRotation = false
+        
+        // 衝突のカテゴリー設定
+        //collisionBitMaskプロパティ:当たった時に跳ね返る動作をする相手を設定
+        bird.physicsBody?.categoryBitMask = birdCategory
+        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory
+        bird.physicsBody?.contactTestBitMask = groundCategory | wallCategory
+    
+    
+        //アニメーションを設定
+        bird.run(flap)
+    
+        //スプライトを追加する
+        addChild(bird)
+        
+    }
 
+    //===========================================================================
+    //画面をタップした時に鳥を上方向に動かす処理
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        //ゲーム中の時(scrollNodeのspeedプロパティが0より大きい時)だけ鳥が羽ばたく
+        if scrollNode.speed > 0 {
+        // 鳥の速度をゼロにする
+        bird.physicsBody?.velocity = CGVector.zero
+        //bird.physicsBody?.velocity = CGVector(dx:0,dy:-3.0)
+        // 鳥に縦方向の力を与える
+        //dx 横への力　dy 縦への力
+        bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 15))
+        
+         //ゲームオーバー状態(scrollNodeのspeedプロパティが0)で鳥の回転アクションが
+        //停止(birdのspeedプロパティが0)になっていたら、restart()メソッドを呼び出してゲームを再開
+        }else if bird.speed == 0 {
+            restart()
+        
+        }
+        
+    }
+    
+    //===========================================================================
+    //SKPhysicsContactDelegateのメソッド。衝突したときに呼ばれる
+    func didBegin(_ contact: SKPhysicsContact) {
+        //ゲームオーバーの時はなにもしない
+        if scrollNode.speed <= 0 {
+            return
+        }
+        
+        if (contact.bodyA.categoryBitMask & scoreCategory) == scoreCategory || (contact.bodyB.categoryBitMask & scoreCategory) == scoreCategory {
+            //スコア用の物体と衝突した　=> 隙間を通過した
+            print("ScoreUp")
+            score += 1
+            scoreLabelNode.text = "Score:\(score)"
+            
+            //ベストスコア更新か判定
+            //UserDefaultsはキーと値を指定して保存
+            //integer(forKey:)メソッドでキーを指定して取得
+            var bestScore = userDefaults.integer(forKey: "BEST")
+            if score > bestScore {
+                bestScore = score
+                bestScoreLabelNode.text = "Best Score:\(bestScore)"
+                //ベストスコアが更新されていればset(_:forKey:)メソッドで値とキーを指定して保存
+                userDefaults.set(bestScore, forKey: "BEST")
+                //即座に保存させるためにsynchronize()メソッドを呼ぶ
+                userDefaults.synchronize()
+            }
+            
+        }else{
+            //壁か地面と衝突した場合
+            print("GameOver")
+            //scoreLabelNode.text = "GameOver"
+            
+            //スクロールを停止させる
+            scrollNode.speed = 0
+            bird.physicsBody?.collisionBitMask = groundCategory
+            
+            let roll = SKAction.rotate(byAngle: CGFloat(Double.pi) * CGFloat(bird.position.y) * 0.01, duration:1)
+            bird.run(roll, completion:{
+                self.bird.speed = 0
+            })
+        
+        }
+    }
+    
+    //===========================================================================
+    //衝突後に画面をタップしてリスタートさせる処理
+    func restart() {
+        //スコアを0に戻す
+        score = 0
+        scoreLabelNode.text = "Score:\(score)"
+        //鳥の位置を初期位置に戻す
+        bird.position = CGPoint(x: self.frame.size.width * 0.2, y:self.frame.size.height * 0.7)
+        bird.physicsBody?.velocity = CGVector.zero
+        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory
+        bird.zRotation = 0
+        
+        wallNode.removeAllChildren()
+        
+        bird.speed = 1
+        scrollNode.speed = 1
+    }
+    
+        
 }
