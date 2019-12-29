@@ -14,6 +14,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scrollNode:SKNode!
     var wallNode:SKNode!
     var bird:SKSpriteNode!
+    var masterChromeNode:SKNode!
     
     
     // 衝突判定カテゴリー,衝突判定に使うカテゴリーの値,カテゴリーを使ってどのスプライト同士が衝突したかを判断
@@ -23,12 +24,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let groundCategory: UInt32 = 1 << 1     // 0...00010 地面
     let wallCategory: UInt32 = 1 << 2       // 0...00100 壁
     let scoreCategory: UInt32 = 1 << 3      // 0...01000 スコア用の物体
+    let chromeCategory: UInt32 = 1 << 4     // 0...10000 chrome用の物体
     
     // スコア用
     var score = 0
+    
+    //chromeスコア用
+    var chromeScore = 0
+    
     //画面上部にスコアを表示できるように、SKLabelNodeクラスを２つ定義
     var scoreLabelNode:SKLabelNode!
     var bestScoreLabelNode:SKLabelNode!
+    var chromeScoreLabelNode:SKLabelNode!
     //UserDefaultsクラスのUserDefaults.standardプロパティでUserDefaultsを取得
     let userDefaults:UserDefaults = UserDefaults.standard
     
@@ -54,11 +61,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wallNode = SKNode()
         scrollNode.addChild(wallNode)
         
+        //chrome用のノード
+        masterChromeNode = SKNode()
+        scrollNode.addChild(masterChromeNode)
+        
         // 各種スプライトを生成する処理をメソッドに分割
         setupGround()
         setupCloud()
         setupWall()
         setupBird()
+        setupChrome()
         
         setupScoreLabel()
     }
@@ -86,6 +98,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let bestScore = userDefaults.integer(forKey: "BEST")
         bestScoreLabelNode.text = "Best Score:\(bestScore)"
         self.addChild(bestScoreLabelNode)
+        
+        //chromeスコアの表示
+        chromeScoreLabelNode = SKLabelNode()
+        chromeScoreLabelNode.fontColor = UIColor.black
+        chromeScoreLabelNode.position = CGPoint(x: 10, y: self.frame.size.height - 120)
+        chromeScoreLabelNode.zPosition = 100 // 一番手前に表示する
+        chromeScoreLabelNode.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+        
+        let chromeScore = userDefaults.integer(forKey: "chrome")
+        chromeScoreLabelNode.text = "Chrome Score:\(chromeScore)"
+        self.addChild(chromeScoreLabelNode)
     }
     
     //===========================================================================
@@ -296,6 +319,85 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     }
     
+    func setupChrome() {
+        //chromeの画像を読み込む
+        let chromeTexture = SKTexture(imageNamed: "chrome")
+        chromeTexture.filteringMode = .linear
+        
+        // 移動する距離を計算
+        let movingDistance = CGFloat(self.frame.size.width + chromeTexture.size().width * 2)
+        
+        // 画面外まで移動するアクションを作成
+        let moveChrome = SKAction.moveBy(x: -movingDistance, y: 0, duration:4)
+
+        // 自身を取り除くアクションを作成
+        //removeFromParent()メソッドで自身を取り除き表示されないようにする
+        let removeChrome = SKAction.removeFromParent()
+
+        // 2つのアニメーションを順に実行するアクションを作成
+        //sequence(_:)メソッドで画面外まで移動するアクションと自身を取り除くアクションを続けて行うアクションを作成
+        let chromeAnimation = SKAction.sequence([moveChrome, removeChrome])
+        let chromeNode_y = CGFloat.random(in: 100 ..< 200)
+        //textureを指定してスプライトを作成する
+        let chrome = SKSpriteNode(texture: chromeTexture)
+        chrome.position = CGPoint(
+            x: 100,
+            y: chromeNode_y
+        )
+        //print(self.frame.size.width)
+        chrome.zPosition = -30 // 雲より手前、地面より奥
+    //===========================================================================
+        // chromeを生成するアクションを作成
+        let createChromeAnimation = SKAction.run({
+        // chorome関連のノードを乗せるノードを作成
+        let chromeNode = SKNode()
+        chromeNode.position = CGPoint(
+           //x: self.frame.size.width + chromeTexture.size().width / 2,
+            x: 100,
+            y: chromeNode_y)
+           // x:100,y:100)
+            
+            chromeNode.zPosition = -30 // 雲より手前、地面より奥
+        
+        // 0〜100までのランダム値を生成
+        //let random_y = CGFloat.random(in: 100 ..< 300)
+        //let random_x = CGFloat.random(in: 80 ..< 150)
+//        //スプライトに衝突判定を設定する
+        chromeNode.physicsBody?.categoryBitMask = self.chromeCategory
+       
+//        // choromeスコア用のノード
+//        let chromeScoreNode = SKNode()
+//        chromeScoreNode.position = CGPoint(
+//            x: chromeItem.size.width,
+//            y: chromeItem.size.width)
+//            //SKPhysicsBody:物体が重力の影響を受けるかどうか
+//        //chromeScoreNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: chromeItem.size.width, height: self.frame.size.height))
+//            //circleOfRadius:chromeのspriteに半径を指定して円形の物理体を設定
+        chromeNode.physicsBody = SKPhysicsBody(circleOfRadius: chrome.size.height / 2)
+        chromeNode.physicsBody?.isDynamic = false
+        chromeNode.physicsBody?.categoryBitMask = self.chromeCategory
+        chromeNode.physicsBody?.contactTestBitMask = self.birdCategory
+
+        //アイテムがスクロールした後に削除する作業をrun
+        chrome.run(chromeAnimation)
+        //シーンにchromeを追加する
+        chromeNode.addChild(chrome)
+        //Node
+        self.masterChromeNode.addChild(chromeNode)
+
+    })
+        //===========================================================================
+        //次のchrome作成までの時間待ちのアクションを生成し、「chromeを生成→時間待ち」を
+        //永遠に繰り返すアクションを生成
+        // 次の壁作成までの時間待ちのアクションを作成
+        let waitAnimation = SKAction.wait(forDuration: 7)
+        
+        // chromeを作成->時間待ち->chromeを作成を無限に繰り返すアクションを作成
+        let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createChromeAnimation, waitAnimation]))
+        
+        self.masterChromeNode.run(repeatForeverAnimation)
+    }
+    
     //===========================================================================
     func setupBird() {
         //鳥の画像を2種類読み込む
@@ -322,8 +424,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 衝突のカテゴリー設定
         //collisionBitMaskプロパティ:当たった時に跳ね返る動作をする相手を設定
         bird.physicsBody?.categoryBitMask = birdCategory
-        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory
-        bird.physicsBody?.contactTestBitMask = groundCategory | wallCategory
+        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory | chromeCategory
+        bird.physicsBody?.contactTestBitMask = groundCategory | wallCategory | chromeCategory
+        
     
     
         //アニメーションを設定
@@ -382,6 +485,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 userDefaults.synchronize()
             }
             
+        }else if (contact.bodyA.categoryBitMask & chromeCategory) == chromeCategory || (contact.bodyB.categoryBitMask & chromeCategory) == chromeCategory {
+            //スコア用の物体と衝突した　=> 隙間を通過した
+            //chromeアイテムに衝突した際にスコアをカウント
+            print("ItemScoreUp")
+            chromeScore += 1
+            chromeScoreLabelNode.text = "ChromeScore:\(chromeScore)"
+            
         }else{
             //壁か地面と衝突した場合
             print("GameOver")
@@ -397,6 +507,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             })
         
         }
+        
+        
     }
     
     //===========================================================================
