@@ -328,6 +328,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let movingDistance = CGFloat(self.frame.size.width + chromeTexture.size().width * 2)
         
         // 画面外まで移動するアクションを作成
+        //x軸を4秒かけて移動する
         let moveChrome = SKAction.moveBy(x: -movingDistance, y: 0, duration:4)
 
         // 自身を取り除くアクションを作成
@@ -337,65 +338,55 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 2つのアニメーションを順に実行するアクションを作成
         //sequence(_:)メソッドで画面外まで移動するアクションと自身を取り除くアクションを続けて行うアクションを作成
         let chromeAnimation = SKAction.sequence([moveChrome, removeChrome])
+        
         let chromeNode_y = CGFloat.random(in: 100 ..< 200)
         //textureを指定してスプライトを作成する
         let chrome = SKSpriteNode(texture: chromeTexture)
         chrome.position = CGPoint(
-            x: 100,
+            x: self.frame.size.width + chrome.size.width,
+            //x: 0,
             y: chromeNode_y
         )
         //print(self.frame.size.width)
         chrome.zPosition = -30 // 雲より手前、地面より奥
+        //アイテムがスクロールした後に削除する作業をrun
+        chrome.run(chromeAnimation)
     //===========================================================================
         // chromeを生成するアクションを作成
         let createChromeAnimation = SKAction.run({
         // chorome関連のノードを乗せるノードを作成
-        let chromeNode = SKNode()
-        chromeNode.position = CGPoint(
-           //x: self.frame.size.width + chromeTexture.size().width / 2,
-            x: 100,
-            y: chromeNode_y)
-           // x:100,y:100)
+        //let chromeNode = SKNode()
+            //self.masterChromeNode.position = CGPoint(
+            //x: self.frame.size.width + chrome.size.width,
+            //x: 0,
+            //y: chromeNode_y)
+            //y: self.frame.size.height - 100)
+            //self.masterChromeNode.zPosition = -30 // 雲より手前、地面より奥
+            //スプライトに衝突判定を設定する
+            self.masterChromeNode.physicsBody?.categoryBitMask = self.chromeCategory
+            //circleOfRadius:chromeのspriteに半径を指定して円形の物理体を設定
+            self.masterChromeNode.physicsBody = SKPhysicsBody(circleOfRadius: chrome.size.height / 2)
+            self.masterChromeNode.physicsBody?.isDynamic = false
+            self.masterChromeNode.physicsBody?.categoryBitMask = self.chromeCategory
+            self.masterChromeNode.physicsBody?.contactTestBitMask = self.birdCategory
             
-            chromeNode.zPosition = -30 // 雲より手前、地面より奥
-        
-        // 0〜100までのランダム値を生成
-        //let random_y = CGFloat.random(in: 100 ..< 300)
-        //let random_x = CGFloat.random(in: 80 ..< 150)
-//        //スプライトに衝突判定を設定する
-        chromeNode.physicsBody?.categoryBitMask = self.chromeCategory
-       
-//        // choromeスコア用のノード
-//        let chromeScoreNode = SKNode()
-//        chromeScoreNode.position = CGPoint(
-//            x: chromeItem.size.width,
-//            y: chromeItem.size.width)
-//            //SKPhysicsBody:物体が重力の影響を受けるかどうか
-//        //chromeScoreNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: chromeItem.size.width, height: self.frame.size.height))
-//            //circleOfRadius:chromeのspriteに半径を指定して円形の物理体を設定
-        chromeNode.physicsBody = SKPhysicsBody(circleOfRadius: chrome.size.height / 2)
-        chromeNode.physicsBody?.isDynamic = false
-        chromeNode.physicsBody?.categoryBitMask = self.chromeCategory
-        chromeNode.physicsBody?.contactTestBitMask = self.birdCategory
-
-        //アイテムがスクロールした後に削除する作業をrun
-        chrome.run(chromeAnimation)
         //シーンにchromeを追加する
-        chromeNode.addChild(chrome)
-        //Node
-        self.masterChromeNode.addChild(chromeNode)
+        self.masterChromeNode.addChild(chrome)
 
     })
         //===========================================================================
         //次のchrome作成までの時間待ちのアクションを生成し、「chromeを生成→時間待ち」を
         //永遠に繰り返すアクションを生成
         // 次の壁作成までの時間待ちのアクションを作成
-        let waitAnimation = SKAction.wait(forDuration: 7)
+        let waitAnimation = SKAction.wait(forDuration: 5)
         
         // chromeを作成->時間待ち->chromeを作成を無限に繰り返すアクションを作成
         let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createChromeAnimation, waitAnimation]))
+        //scrollNodeの配下に直接あるmasterChromeNode??
+        //********************1つのSKSpriteNodeには１つのSKActionしか設定できない？？************
         
-        self.masterChromeNode.run(repeatForeverAnimation)
+        //masterChromeNode.run(repeatForeverAnimation)
+        chrome.run(repeatForeverAnimation)
     }
     
     //===========================================================================
