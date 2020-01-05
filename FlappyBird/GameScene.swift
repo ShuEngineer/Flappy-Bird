@@ -362,8 +362,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             chrome.position = CGPoint(
                 //chromeNode.positionでx軸は設定したため、y軸を設定する
                 x: 0,
-                //y: chromeNode_y
-                y: 400
+                y: chromeNode_y
+                //y: 400
             )
             //スプライトに衝突判定を設定する
             chrome.physicsBody?.categoryBitMask = self.chromeCategory
