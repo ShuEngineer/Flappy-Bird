@@ -39,6 +39,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     //UserDefaultsクラスのUserDefaults.standardプロパティでUserDefaultsを取得
     let userDefaults:UserDefaults = UserDefaults.standard
     
+    let bgm = SKAudioNode.init(fileNamed: "BGM.mp3")
+    
+    
     //chrome取得時のsound
     let chromeSound = SKAction.playSoundFileNamed("chromeSound.mp3", waitForCompletion: false)
     
@@ -50,6 +53,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.gravity = CGVector(dx: 0, dy: -4)
         //SKPhysicsWorldクラスのdelegateプロパティに設定
         physicsWorld.contactDelegate = self
+        //BGM
+        //addChild(bgm)
         
         //背景色を設定
         //backgroundColorはUIColorクラス
