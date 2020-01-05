@@ -40,7 +40,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let userDefaults:UserDefaults = UserDefaults.standard
     
     //chrome取得時のsound
-    let chromeSound = SKAction.playSoundFileNamed("CoinSound.mp3", waitForCompletion: false)
+    let chromeSound = SKAction.playSoundFileNamed("chromeSound.mp3", waitForCompletion: false)
     
     // SKView上にシーンが表示された時に呼ばれるメソッド
     //ゲーム画面（＝SKSceneクラスを継承したクラス）が表示されるときに呼ばれるメソッドがdidMove(to:)メソッド
@@ -362,7 +362,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             )
             //スプライトに衝突判定を設定する
             chrome.physicsBody?.categoryBitMask = self.chromeCategory
-            chrome.physicsBody = SKPhysicsBody(texture: chromeTexture, size: chromeTexture.size())
+            //chrome.physicsBody = SKPhysicsBody(texture: chromeTexture, size: chromeTexture.size())
+            //物理ボディの形状を四角形や円形にすればノードの領域を細かく設定できる
+            let chromeRadius = chrome.size.height / 2
+            chrome.physicsBody = SKPhysicsBody(circleOfRadius: chromeRadius)
             chrome.physicsBody?.isDynamic = false
             chrome.physicsBody?.categoryBitMask = self.chromeCategory
             chrome.physicsBody?.collisionBitMask = self.birdCategory
@@ -476,13 +479,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
             
         }else if (contact.bodyA.categoryBitMask & chromeCategory) == chromeCategory || (contact.bodyB.categoryBitMask & chromeCategory) == chromeCategory {
+            //取得時にサウンドを鳴らす
+            run(chromeSound)
+            //↓chromeアイテムを削除可能　なぜ？
+            //contact.bodyA.node?.removeFromParent()
+            contact.bodyB.node?.removeFromParent()
+
             //chromeアイテムに衝突した際にスコアをカウント
             print("ItemScoreUp")
             chromeScore += 1
             chromeScoreLabelNode.text = "ChromeScore:\(chromeScore)"
-            //↓chromeアイテムを削除可能　なぜ？
-            contact.bodyA.node?.removeFromParent() //contact.bodyA:chrome
-            //contact.bodyB.node?.removeFromParent() //contact.bodyB:bird
             
             
         }else{
@@ -512,7 +518,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabelNode.text = "Score:\(score)"
         //chromeスコアを0に戻す
         chromeScore = 0
-        chromeScoreLabelNode.text = "Score:\(chromeScore)"
+        chromeScoreLabelNode.text = "Chrome Score:\(chromeScore)"
         //鳥の位置を初期位置に戻す
         bird.position = CGPoint(x: self.frame.size.width * 0.2, y:self.frame.size.height * 0.7)
         bird.physicsBody?.velocity = CGVector.zero
