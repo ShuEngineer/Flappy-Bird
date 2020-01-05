@@ -25,7 +25,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let wallCategory: UInt32 = 1 << 2       // 0...00100 壁
     let scoreCategory: UInt32 = 1 << 3      // 0...01000 スコア用の物体
     let chromeCategory: UInt32 = 1 << 4     // 0...10000 chrome用の物体
-    
+
     // スコア用
     var score = 0
     
@@ -38,6 +38,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var chromeScoreLabelNode:SKLabelNode!
     //UserDefaultsクラスのUserDefaults.standardプロパティでUserDefaultsを取得
     let userDefaults:UserDefaults = UserDefaults.standard
+    
+    //chrome取得時のsound
+    let chromeSound = SKAction.playSoundFileNamed("CoinSound.mp3", waitForCompletion: false)
     
     // SKView上にシーンが表示された時に呼ばれるメソッド
     //ゲーム画面（＝SKSceneクラスを継承したクラス）が表示されるときに呼ばれるメソッドがdidMove(to:)メソッド
@@ -229,9 +232,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 2つのアニメーションを順に実行するアクションを作成
         //sequence(_:)メソッドで画面外まで移動するアクションと自身を取り除くアクションを続けて行うアクションを作成
         let wallAnimation = SKAction.sequence([moveWall, removeWall])
-        
-        
-        
+
         //===========================================================================
         // 鳥の画像サイズを取得
         let birdSize = SKTexture(imageNamed: "bird_a").size()
@@ -314,7 +315,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // 壁を作成->時間待ち->壁を作成を無限に繰り返すアクションを作成
         let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createWallAnimation, waitAnimation]))
-        
         wallNode.run(repeatForeverAnimation)
 
     }
@@ -325,11 +325,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         chromeTexture.filteringMode = .linear
         
         // 移動する距離を計算
-        let movingDistance = CGFloat(self.frame.size.width + chromeTexture.size().width * 2)
-        
+        let movingDistance = CGFloat(self.frame.size.width + chromeTexture.size().width * 3)
+        //let movingDistance = CGFloat(self.frame.size.width)
         // 画面外まで移動するアクションを作成
         //x軸を4秒かけて移動する
-        let moveChrome = SKAction.moveBy(x: -movingDistance, y: 0, duration:4)
+        let moveChrome = SKAction.moveBy(x: -movingDistance, y: 0, duration:4.5)
 
         // 自身を取り除くアクションを作成
         //removeFromParent()メソッドで自身を取り除き表示されないようにする
@@ -338,55 +338,53 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 2つのアニメーションを順に実行するアクションを作成
         //sequence(_:)メソッドで画面外まで移動するアクションと自身を取り除くアクションを続けて行うアクションを作成
         let chromeAnimation = SKAction.sequence([moveChrome, removeChrome])
-        
-        let chromeNode_y = CGFloat.random(in: 100 ..< 200)
-        //textureを指定してスプライトを作成する
-        let chrome = SKSpriteNode(texture: chromeTexture)
-        chrome.position = CGPoint(
-            x: self.frame.size.width + chrome.size.width,
-            //x: 0,
-            y: chromeNode_y
-        )
-        //print(self.frame.size.width)
-        chrome.zPosition = -30 // 雲より手前、地面より奥
+
+        //print(self.frame.size.width
         //アイテムがスクロールした後に削除する作業をrun
-        chrome.run(chromeAnimation)
+        //chrome.run(chromeAnimation)
     //===========================================================================
         // chromeを生成するアクションを作成
         let createChromeAnimation = SKAction.run({
-        // chorome関連のノードを乗せるノードを作成
-        //let chromeNode = SKNode()
-            //self.masterChromeNode.position = CGPoint(
-            //x: self.frame.size.width + chrome.size.width,
-            //x: 0,
-            //y: chromeNode_y)
-            //y: self.frame.size.height - 100)
-            //self.masterChromeNode.zPosition = -30 // 雲より手前、地面より奥
+            // chrome関連のノードを乗せるノードを作成
+            let chromeNode = SKNode()
+            chromeNode.position = CGPoint(
+                x: self.frame.size.width + chromeTexture.size().width * 3, y: 0)
+            chromeNode.zPosition = -30 // 雲より手前、地面より奥
+            //y軸にランダムな値を設定
+            let chromeNode_y = CGFloat.random(in: 200 ..< 400)
+            //textureを指定してスプライトを作成する
+            let chrome = SKSpriteNode(texture: chromeTexture)
+            chrome.position = CGPoint(
+                //chromeNode.positionでx軸は設定したため、y軸を設定する
+                x: 0,
+                //y: chromeNode_y
+                y: 400
+            )
             //スプライトに衝突判定を設定する
-            self.masterChromeNode.physicsBody?.categoryBitMask = self.chromeCategory
-            //circleOfRadius:chromeのspriteに半径を指定して円形の物理体を設定
-            self.masterChromeNode.physicsBody = SKPhysicsBody(circleOfRadius: chrome.size.height / 2)
-            self.masterChromeNode.physicsBody?.isDynamic = false
-            self.masterChromeNode.physicsBody?.categoryBitMask = self.chromeCategory
-            self.masterChromeNode.physicsBody?.contactTestBitMask = self.birdCategory
-            
-        //シーンにchromeを追加する
-        self.masterChromeNode.addChild(chrome)
+            chrome.physicsBody?.categoryBitMask = self.chromeCategory
+            chrome.physicsBody = SKPhysicsBody(texture: chromeTexture, size: chromeTexture.size())
+            chrome.physicsBody?.isDynamic = false
+            chrome.physicsBody?.categoryBitMask = self.chromeCategory
+            chrome.physicsBody?.collisionBitMask = self.birdCategory
+            chrome.physicsBody?.contactTestBitMask = self.birdCategory
 
+            chromeNode.addChild(chrome)
+            chromeNode.run(chromeAnimation)
+        //シーンにchromeを追加する
+        self.masterChromeNode.addChild(chromeNode)
+    
     })
         //===========================================================================
         //次のchrome作成までの時間待ちのアクションを生成し、「chromeを生成→時間待ち」を
         //永遠に繰り返すアクションを生成
         // 次の壁作成までの時間待ちのアクションを作成
-        let waitAnimation = SKAction.wait(forDuration: 5)
+        let waitAnimation = SKAction.wait(forDuration: 6)
         
         // chromeを作成->時間待ち->chromeを作成を無限に繰り返すアクションを作成
-        let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createChromeAnimation, waitAnimation]))
+        let repeatForeverChromeAnimation = SKAction.repeatForever(SKAction.sequence([createChromeAnimation, waitAnimation]))
         //scrollNodeの配下に直接あるmasterChromeNode??
         //********************1つのSKSpriteNodeには１つのSKActionしか設定できない？？************
-        
-        //masterChromeNode.run(repeatForeverAnimation)
-        chrome.run(repeatForeverAnimation)
+        masterChromeNode.run(repeatForeverChromeAnimation)
     }
     
     //===========================================================================
@@ -412,10 +410,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 衝突した時に回転させない
         bird.physicsBody?.allowsRotation = false
         
-        // 衝突のカテゴリー設定
+        // 衝突のカテゴリービットマスクを設定
         //collisionBitMaskプロパティ:当たった時に跳ね返る動作をする相手を設定
+        //contactTestBitMaskプロパティ：接触の検知
         bird.physicsBody?.categoryBitMask = birdCategory
-        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory | chromeCategory
+        bird.physicsBody?.collisionBitMask = groundCategory | wallCategory
         bird.physicsBody?.contactTestBitMask = groundCategory | wallCategory | chromeCategory
         
     
@@ -477,11 +476,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
             
         }else if (contact.bodyA.categoryBitMask & chromeCategory) == chromeCategory || (contact.bodyB.categoryBitMask & chromeCategory) == chromeCategory {
-            //スコア用の物体と衝突した　=> 隙間を通過した
             //chromeアイテムに衝突した際にスコアをカウント
             print("ItemScoreUp")
             chromeScore += 1
             chromeScoreLabelNode.text = "ChromeScore:\(chromeScore)"
+            //↓chromeアイテムを削除可能　なぜ？
+            contact.bodyA.node?.removeFromParent() //contact.bodyA:chrome
+            //contact.bodyB.node?.removeFromParent() //contact.bodyB:bird
+            
             
         }else{
             //壁か地面と衝突した場合
@@ -508,6 +510,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         //スコアを0に戻す
         score = 0
         scoreLabelNode.text = "Score:\(score)"
+        //chromeスコアを0に戻す
+        chromeScore = 0
+        chromeScoreLabelNode.text = "Score:\(chromeScore)"
         //鳥の位置を初期位置に戻す
         bird.position = CGPoint(x: self.frame.size.width * 0.2, y:self.frame.size.height * 0.7)
         bird.physicsBody?.velocity = CGVector.zero
@@ -515,6 +520,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bird.zRotation = 0
         
         wallNode.removeAllChildren()
+        masterChromeNode.removeAllChildren()
         
         bird.speed = 1
         scrollNode.speed = 1
