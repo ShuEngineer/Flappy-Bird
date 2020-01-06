@@ -356,7 +356,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 x: self.frame.size.width + chromeTexture.size().width * 3, y: 0)
             chromeNode.zPosition = -30 // 雲より手前、地面より奥
             //y軸にランダムな値を設定
-            let chromeNode_y = CGFloat.random(in: 200 ..< 400)
+            let chromeNode_y = CGFloat.random(in: 300 ..< 500)
             //textureを指定してスプライトを作成する
             let chrome = SKSpriteNode(texture: chromeTexture)
             chrome.position = CGPoint(

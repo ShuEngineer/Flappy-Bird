@@ -11,9 +11,9 @@
 		030E984D23A4B0A300C659DA /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030E984C23A4B0A300C659DA /* ViewController.swift */; };
 		030E985023A4B0A300C659DA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 030E984E23A4B0A300C659DA /* Main.storyboard */; };
 		030E985523A4B0A500C659DA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 030E985323A4B0A500C659DA /* LaunchScreen.storyboard */; };
+		033D5B9823C3733A00AD1074 /* chromeSound.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 033D5B9723C3733A00AD1074 /* chromeSound.mp3 */; };
+		033D5B9A23C373F900AD1074 /* BGM.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 033D5B9923C373F900AD1074 /* BGM.mp3 */; };
 		03CA24BE23A4C521004DE13A /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CA24BD23A4C521004DE13A /* GameScene.swift */; };
-		03EFC29A23C1784200DB1F94 /* chromeSound.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 03EFC29923C1784200DB1F94 /* chromeSound.mp3 */; };
-		03EFC29C23C1899200DB1F94 /* BGM.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 03EFC29B23C1899200DB1F94 /* BGM.mp3 */; };
 		03F36A5723B7AB3B0074B1F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03F36A5623B7AB3B0074B1F9 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -24,9 +24,9 @@
 		030E984F23A4B0A300C659DA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		030E985423A4B0A500C659DA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		030E985623A4B0A500C659DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		033D5B9723C3733A00AD1074 /* chromeSound.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = chromeSound.mp3; sourceTree = "<group>"; };
+		033D5B9923C373F900AD1074 /* BGM.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = BGM.mp3; sourceTree = "<group>"; };
 		03CA24BD23A4C521004DE13A /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
-		03EFC29923C1784200DB1F94 /* chromeSound.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = chromeSound.mp3; path = ../../../../../Downloads/chromeSound.mp3; sourceTree = "<group>"; };
-		03EFC29B23C1899200DB1F94 /* BGM.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = BGM.mp3; path = ../../../../../Downloads/BGM.mp3; sourceTree = "<group>"; };
 		03F36A5623B7AB3B0074B1F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -67,8 +67,8 @@
 				030E985323A4B0A500C659DA /* LaunchScreen.storyboard */,
 				030E985623A4B0A500C659DA /* Info.plist */,
 				03F36A5623B7AB3B0074B1F9 /* Assets.xcassets */,
-				03EFC29923C1784200DB1F94 /* chromeSound.mp3 */,
-				03EFC29B23C1899200DB1F94 /* BGM.mp3 */,
+				033D5B9723C3733A00AD1074 /* chromeSound.mp3 */,
+				033D5B9923C373F900AD1074 /* BGM.mp3 */,
 			);
 			path = FlappyBird;
 			sourceTree = "<group>";
@@ -131,10 +131,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03EFC29A23C1784200DB1F94 /* chromeSound.mp3 in Resources */,
+				033D5B9823C3733A00AD1074 /* chromeSound.mp3 in Resources */,
 				030E985523A4B0A500C659DA /* LaunchScreen.storyboard in Resources */,
 				03F36A5723B7AB3B0074B1F9 /* Assets.xcassets in Resources */,
-				03EFC29C23C1899200DB1F94 /* BGM.mp3 in Resources */,
+				033D5B9A23C373F900AD1074 /* BGM.mp3 in Resources */,
 				030E985023A4B0A300C659DA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
